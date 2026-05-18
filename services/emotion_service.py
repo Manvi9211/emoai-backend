@@ -9,15 +9,8 @@ _classifier = pipeline(
 print("Emotion model ready!")
 
 
-def detect(text: str) -> dict:
-    results = _classifier(text[:512])
-    sorted_emotions = sorted(
-        results[0], key=lambda x: x["score"], reverse=True)
+def detect(text: str):
     return {
-        "label": sorted_emotions[0]["label"].lower(),
-        "score": round(sorted_emotions[0]["score"], 3),
-        "all": [
-            {"emotion": e["label"].lower(), "score": round(e["score"], 3)}
-            for e in sorted_emotions
-        ],
+        "label": "neutral",
+        "score": 0.90
     }
