@@ -1,16 +1,41 @@
-from transformers import pipeline
+import requests
+from fastapi import HTTPException
+from os import getenv
 
-print("Loading emotion model... (first run ~30s, cached after)")
-_classifier = pipeline(
-    "text-classification",
-    model="j-hartmann/emotion-english-distilroberta-base",
-    top_k=None,
-)
-print("Emotion model ready!")
+HF_TOKEN = getenv("HF_TOKEN")
+
+API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
+
+headers = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 
 def detect(text: str):
-    return {
-        "label": "neutral",
-        "score": 0.90
-    }
+    try:
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            json={"inputs": text},
+            timeout=30
+        )
+
+        data = response.json()
+
+        if isinstance(data, dict) and data.get("error"):
+            raise HTTPException(status_code=500, detail=data["error"])
+
+        result = data[0]
+
+        best = max(result, key=lambda x: x["score"])
+
+        return {
+            "label": best["label"],
+            "score": round(best["score"], 3)
+        }
+
+    except Exception:
+        return {
+            "label": "neutral",
+            "score": 0.5
+        }
